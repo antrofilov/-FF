@@ -1,0 +1,570 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Текстовый счетчик</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #1e3a3f;
+            --text-color: #ffffff;
+            --counter-bg: #ffffff;
+            --counter-text: #000000;
+            --highlight-color: #3a8a8f;
+            --scroll-thumb: #5a8a8f;
+            --scroll-track: #e0e0e0;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        .counters-container {
+            width: 100%;
+            padding: 8px 0;
+            background-color: var(--counter-bg);
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        .counters-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 0 5px;
+        }
+
+        .counter-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .counter-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--counter-text);
+            margin-bottom: 2px;
+            font-family: var(--font-family);
+            white-space: nowrap;
+        }
+
+        .counter-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: var(--counter-text);
+            opacity: 0.8;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+        }
+
+        .counter-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin-top: 5px;
+        }
+
+        .counter-button:hover .button-icon {
+            color: #3a8a8f;
+        }
+
+        .counter-button:hover .button-text {
+            color: #3a8a8f;
+        }
+
+        .button-icon {
+            font-size: 16px;
+            color: #000000;
+            margin-bottom: 2px;
+        }
+
+        .button-text {
+            font-size: 9px;
+            color: #000000;
+            text-transform: uppercase;
+        }
+
+        .text-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            padding: 5px;
+        }
+
+        #text-input {
+            width: 100%;
+            height: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.2;
+            letter-spacing: -0.1px;
+            resize: none;
+            outline: none;
+            font-family: var(--font-family);
+        }
+
+        #text-input::placeholder {
+            color: rgba(255,255,255,0.3);
+            font-style: italic;
+        }
+
+        .scroll-track {
+            position: absolute;
+            right: 3px;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background-color: var(--scroll-track);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .scroll-thumb {
+            position: absolute;
+            right: 0;
+            width: 6px;
+            background-color: var(--scroll-thumb);
+            border-radius: 3px;
+            transition: height 0.2s;
+        }
+
+        .menu-button {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--highlight-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+            border: none;
+            transition: transform 0.2s;
+        }
+
+        .menu-button:hover {
+            transform: scale(1.1);
+        }
+
+        .color-picker {
+            position: fixed;
+            bottom: 65px;
+            right: 15px;
+            width: 180px;
+            max-height: 200px;
+            background-color: rgba(0,0,0,0.8);
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+        }
+
+        .color-option {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .color-option:hover {
+            transform: scale(1.15);
+        }
+
+        .color-option.active {
+            border-color: white;
+            transform: scale(1.15);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="counters-container">
+        <div class="counters-row">
+            <div class="counter-item">
+                <span class="counter-value" id="char-count">0</span>
+                <span class="counter-label">Символы</span>
+                <button class="counter-button" id="copy-btn">
+                    <div class="button-icon"><i class="fas fa-copy"></i></div>
+                    <div class="button-text">Копировать</div>
+                </button>
+            </div>
+            <div class="counter-item">
+                <span class="counter-value" id="word-count">0</span>
+                <span class="counter-label">Слова</span>
+                <button class="counter-button" id="paste-btn">
+                    <div class="button-icon"><i class="fas fa-paste"></i></div>
+                    <div class="button-text">Вставить</div>
+                </button>
+            </div>
+            <div class="counter-item">
+                <span class="counter-value" id="sentence-count">0</span>
+                <span class="counter-label">Предложения</span>
+                <button class="counter-button" id="clear-btn">
+                    <div class="button-icon"><i class="fas fa-trash"></i></div>
+                    <div class="button-text">Очистить</div>
+                </button>
+            </div>
+            <div class="counter-item">
+                <span class="counter-value" id="paragraph-count">0</span>
+                <span class="counter-label">Абзацы</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-value" id="unique-word-count">0</span>
+                <span class="counter-label">Уникальные</span>
+            </div>
+            <div class="counter-item">
+                <span class="counter-value" id="time-count">0м 0с</span>
+                <span class="counter-label">Время</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-container">
+        <textarea id="text-input" placeholder="Введите текст здесь..."></textarea>
+        <div class="scroll-track" id="scroll-track">
+            <div class="scroll-thumb" id="scroll-thumb"></div>
+        </div>
+    </div>
+
+    <button class="menu-button" id="menu-button">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="color-picker" id="color-picker">
+        <!-- Старые цвета -->
+        <div class="color-option active" style="background-color: #1e3a3f;" data-color="#1e3a3f"></div>
+        <div class="color-option" style="background-color: #000000;" data-color="#000000"></div>
+        <div class="color-option" style="background-color: #2c3e50;" data-color="#2c3e50"></div>
+        <div class="color-option" style="background-color: #34495e;" data-color="#34495e"></div>
+        <div class="color-option" style="background-color: #16a085;" data-color="#16a085"></div>
+        <div class="color-option" style="background-color: #27ae60;" data-color="#27ae60"></div>
+        <div class="color-option" style="background-color: #2980b9;" data-color="#2980b9"></div>
+        <div class="color-option" style="background-color: #8e44ad;" data-color="#8e44ad"></div>
+        <div class="color-option" style="background-color: #f39c12;" data-color="#f39c12"></div>
+        <div class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c"></div>
+        <div class="color-option" style="background-color: #d35400;" data-color="#d35400"></div>
+        <div class="color-option" style="background-color: #c0392b;" data-color="#c0392b"></div>
+        <div class="color-option" style="background-color: #7f8c8d;" data-color="#7f8c8d"></div>
+        <div class="color-option" style="background-color: #2c2c2c;" data-color="#2c2c2c"></div>
+        <div class="color-option" style="background-color: #3d3d3d;" data-color="#3d3d3d"></div>
+        
+        <!-- Новые цвета -->
+        <div class="color-option" style="background-color: #1abc9c;" data-color="#1abc9c"></div>
+        <div class="color-option" style="background-color: #2ecc71;" data-color="#2ecc71"></div>
+        <div class="color-option" style="background-color: #3498db;" data-color="#3498db"></div>
+        <div class="color-option" style="background-color: #9b59b6;" data-color="#9b59b6"></div>
+        <div class="color-option" style="background-color: #f1c40f;" data-color="#f1c40f"></div>
+        <div class="color-option" style="background-color: #e67e22;" data-color="#e67e22"></div>
+        <div class="color-option" style="background-color: #e74c3c;" data-color="#e74c3c"></div>
+        <div class="color-option" style="background-color: #ecf0f1;" data-color="#ecf0f1"></div>
+        <div class="color-option" style="background-color: #95a5a6;" data-color="#95a5a6"></div>
+        <div class="color-option" style="background-color: #607d8b;" data-color="#607d8b"></div>
+        <div class="color-option" style="background-color: #2196f3;" data-color="#2196f3"></div>
+        <div class="color-option" style="background-color: #3f51b5;" data-color="#3f51b5"></div>
+        <div class="color-option" style="background-color: #673ab7;" data-color="#673ab7"></div>
+        <div class="color-option" style="background-color: #9c27b0;" data-color="#9c27b0"></div>
+        <div class="color-option" style="background-color: #e91e63;" data-color="#e91e63"></div>
+        <div class="color-option" style="background-color: #f44336;" data-color="#f44336"></div>
+        <div class="color-option" style="background-color: #ff9800;" data-color="#ff9800"></div>
+        <div class="color-option" style="background-color: #ff5722;" data-color="#ff5722"></div>
+        <div class="color-option" style="background-color: #795548;" data-color="#795548"></div>
+        <div class="color-option" style="background-color: #546e7a;" data-color="#546e7a"></div>
+        <div class="color-option" style="background-color: #00bcd4;" data-color="#00bcd4"></div>
+        <div class="color-option" style="background-color: #009688;" data-color="#009688"></div>
+        <div class="color-option" style="background-color: #4caf50;" data-color="#4caf50"></div>
+        <div class="color-option" style="background-color: #8bc34a;" data-color="#8bc34a"></div>
+        <div class="color-option" style="background-color: #cddc39;" data-color="#cddc39"></div>
+        <div class="color-option" style="background-color: #ffeb3b;" data-color="#ffeb3b"></div>
+        <div class="color-option" style="background-color: #ffc107;" data-color="#ffc107"></div>
+        <div class="color-option" style="background-color: #ff6b6b;" data-color="#ff6b6b"></div>
+        <div class="color-option" style="background-color: #a29bfe;" data-color="#a29bfe"></div>
+        <div class="color-option" style="background-color: #fd79a8;" data-color="#fd79a8"></div>
+        <div class="color-option" style="background-color: #fdcb6e;" data-color="#fdcb6e"></div>
+        <div class="color-option" style="background-color: #00cec9;" data-color="#00cec9"></div>
+        <div class="color-option" style="background-color: #6c5ce7;" data-color="#6c5ce7"></div>
+        <div class="color-option" style="background-color: #b2bec3;" data-color="#b2bec3"></div>
+        <div class="color-option" style="background-color: #636e72;" data-color="#636e72"></div>
+        <div class="color-option" style="background-color: #2d3436;" data-color="#2d3436"></div>
+        <div class="color-option" style="background-color: #4834d4;" data-color="#4834d4"></div>
+        <div class="color-option" style="background-color: #130f40;" data-color="#130f40"></div>
+        <div class="color-option" style="background-color: #22a6b3;" data-color="#22a6b3"></div>
+        <div class="color-option" style="background-color: #be2edd;" data-color="#be2edd"></div>
+        <div class="color-option" style="background-color: #ff9ff3;" data-color="#ff9ff3"></div>
+        <div class="color-option" style="background-color: #feca57;" data-color="#feca57"></div>
+        <div class="color-option" style="background-color: #ff6b6b;" data-color="#ff6b6b"></div>
+        <div class="color-option" style="background-color: #48dbfb;" data-color="#48dbfb"></div>
+        <div class="color-option" style="background-color: #1dd1a1;" data-color="#1dd1a1"></div>
+        <div class="color-option" style="background-color: #00d2d3;" data-color="#00d2d3"></div>
+        <div class="color-option" style="background-color: #54a0ff;" data-color="#54a0ff"></div>
+        <div class="color-option" style="background-color: #5f27cd;" data-color="#5f27cd"></div>
+        <div class="color-option" style="background-color: #341f97;" data-color="#341f97"></div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы интерфейса
+            const textInput = document.getElementById('text-input');
+            const charCount = document.getElementById('char-count');
+            const wordCount = document.getElementById('word-count');
+            const sentenceCount = document.getElementById('sentence-count');
+            const paragraphCount = document.getElementById('paragraph-count');
+            const uniqueWordCount = document.getElementById('unique-word-count');
+            const timeCount = document.getElementById('time-count');
+            const scrollTrack = document.getElementById('scroll-track');
+            const scrollThumb = document.getElementById('scroll-thumb');
+            const menuButton = document.getElementById('menu-button');
+            const colorPicker = document.getElementById('color-picker');
+            const colorOptions = document.querySelectorAll('.color-option');
+            const copyBtn = document.getElementById('copy-btn');
+            const pasteBtn = document.getElementById('paste-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const notification = document.getElementById('notification');
+
+            // Показать уведомление
+            function showNotification(message) {
+                notification.textContent = message;
+                notification.style.opacity = '1';
+                
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                }, 2000);
+            }
+
+            // Расчет времени написания (100 слов в минуту)
+            function calculateTime(wordCount) {
+                const totalSeconds = Math.round((wordCount / 100) * 60);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes}м ${seconds}с`;
+            }
+
+            // Подсчет слов (улучшенный алгоритм)
+            function countWords(text) {
+                if (!text.trim()) return 0;
+                
+                const cleanedText = text.replace(/[^\wа-яА-Я']+/g, ' ');
+                const words = cleanedText.split(/\s+/).filter(word => word.length > 0);
+                return words.length;
+            }
+
+            // Подсчет уникальных слов
+            function countUniqueWords(text) {
+                if (!text.trim()) return 0;
+                
+                const cleanedText = text.toLowerCase().replace(/[^\wа-яА-Я']+/g, ' ');
+                const words = cleanedText.split(/\s+/).filter(word => word.length > 0);
+                return new Set(words).size;
+            }
+
+            // Инициализация скроллбара
+            function initScrollbar() {
+                const textHeight = textInput.scrollHeight;
+                const containerHeight = textInput.clientHeight;
+                const thumbHeight = Math.max(20, containerHeight * containerHeight / textHeight);
+                
+                scrollThumb.style.height = thumbHeight + 'px';
+                
+                if (textHeight <= containerHeight) {
+                    scrollTrack.style.display = 'none';
+                } else {
+                    scrollTrack.style.display = 'block';
+                }
+            }
+
+            // Обновление счетчиков
+            function updateCounters() {
+                const text = textInput.value;
+                
+                charCount.textContent = text.length;
+                
+                const wordCountValue = countWords(text);
+                wordCount.textContent = wordCountValue;
+                
+                timeCount.textContent = calculateTime(wordCountValue);
+                
+                const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+                sentenceCount.textContent = sentences.length;
+                
+                const paragraphs = text.split(/\n+/).filter(p => p.trim().length > 0);
+                paragraphCount.textContent = paragraphs.length;
+                
+                uniqueWordCount.textContent = countUniqueWords(text);
+                
+                initScrollbar();
+            }
+
+            // Обработчики событий
+            textInput.addEventListener('input', function() {
+                updateCounters();
+                
+                const scrollRatio = textInput.scrollTop / (textInput.scrollHeight - textInput.clientHeight);
+                const thumbPos = scrollRatio * (scrollTrack.clientHeight - scrollThumb.clientHeight);
+                scrollThumb.style.top = thumbPos + 'px';
+            });
+
+            let isDragging = false;
+            let startY = 0;
+            let startTop = 0;
+
+            scrollThumb.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                startY = e.clientY;
+                startTop = parseInt(scrollThumb.style.top) || 0;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const deltaY = e.clientY - startY;
+                let thumbPos = startTop + deltaY;
+                
+                thumbPos = Math.max(0, thumbPos);
+                thumbPos = Math.min(scrollTrack.clientHeight - scrollThumb.clientHeight, thumbPos);
+                
+                scrollThumb.style.top = thumbPos + 'px';
+                
+                const scrollRatio = thumbPos / (scrollTrack.clientHeight - scrollThumb.clientHeight);
+                textInput.scrollTop = scrollRatio * (textInput.scrollHeight - textInput.clientHeight);
+            });
+
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+
+            scrollTrack.addEventListener('click', function(e) {
+                const trackRect = scrollTrack.getBoundingClientRect();
+                const thumbPos = e.clientY - trackRect.top - scrollThumb.clientHeight / 2;
+                
+                const scrollRatio = Math.max(0, Math.min(1, thumbPos / scrollTrack.clientHeight));
+                textInput.scrollTop = scrollRatio * (textInput.scrollHeight - textInput.clientHeight);
+            });
+
+            menuButton.addEventListener('click', function() {
+                colorPicker.style.display = colorPicker.style.display === 'grid' ? 'none' : 'grid';
+            });
+
+            // Закрытие палитры при клике вне её области
+            document.addEventListener('click', function(e) {
+                if (!colorPicker.contains(e.target) && e.target !== menuButton) {
+                    colorPicker.style.display = 'none';
+                }
+            });
+
+            copyBtn.addEventListener('click', function() {
+                if (textInput.value.trim() === '') {
+                    showNotification('Нечего копировать');
+                    return;
+                }
+                
+                textInput.select();
+                document.execCommand('copy');
+                showNotification('Текст скопирован в буфер обмена');
+                
+                // Снимаем выделение текста
+                window.getSelection().removeAllRanges();
+            });
+
+            pasteBtn.addEventListener('click', async function() {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    textInput.value += text;
+                    updateCounters();
+                    showNotification('Текст вставлен');
+                } catch (err) {
+                    showNotification('Не удалось вставить текст');
+                    console.error('Ошибка при вставке:', err);
+                }
+            });
+
+            clearBtn.addEventListener('click', function() {
+                if (textInput.value.trim() === '') {
+                    showNotification('Текст уже пуст');
+                    return;
+                }
+                
+                textInput.value = '';
+                updateCounters();
+                showNotification('Текст очищен');
+            });
+
+            colorOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const newColor = option.getAttribute('data-color');
+                    
+                    colorOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    
+                    document.documentElement.style.setProperty('--bg-color', newColor);
+                    
+                    // Настройка цвета скроллбара в зависимости от выбранного фона
+                    if (newColor === '#000000' || newColor === '#2c2c2c' || newColor === '#3d3d3d' || 
+                        newColor === '#130f40' || newColor === '#2d3436' || newColor === '#341f97') {
+                        document.documentElement.style.setProperty('--scroll-thumb', '#555555');
+                    } else {
+                        document.documentElement.style.setProperty('--scroll-thumb', '#5a8a8f');
+                    }
+                    
+                    colorPicker.style.display = 'none';
+                });
+            });
+
+            // Инициализация
+            updateCounters();
+            initScrollbar();
+        });
+    </script>
+</body>
+</html>
